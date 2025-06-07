@@ -1,0 +1,52 @@
+# STEP 1: Install Required Libraries
+!pip install -q pandas numpy matplotlib seaborn
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import zipfile
+import os
+# STEP 2: Upload and Extract the ZIP File
+from google.colab import files
+
+uploaded = files.upload()  # Upload 'archive (5).zip' manually here
+
+# Extract it
+zip_path = next(iter(uploaded))  # Get uploaded filename
+extract_path = "/content/extracted_data"
+
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall(extract_path)
+
+# Confirm files extracted
+os.listdir(extract_path)
+# STEP 3: Load the USvideos.csv Dataset
+file_path = os.path.join(extract_path, 'USvideos.csv')
+df = pd.read_csv(file_path)
+
+print("Initial Shape:", df.shape)
+df.head()
+# STEP 4: Remove Duplicates
+initial_shape = df.shape
+df.drop_duplicates(inplace=True)
+print("After Removing Duplicates:", df.shape)
+# STEP 5: Handle Missing Values
+df['description'].fillna('No description provided.', inplace=True)
+print("Missing values:\n", df.isnull().sum())
+# STEP 7: Detect and Remove Outliers
+# Using 99.5th percentile as threshold
+quantiles = df[['views', 'likes', 'dislikes', 'comment_count']].quantile(0.995)
+df = df[
+    (df['views'] <= quantiles['views']) &
+    (df['likes'] <= quantiles['likes']) &
+    (df['dislikes'] <= quantiles['dislikes']) &
+    (df['comment_count'] <= quantiles['comment_count'])
+]
+print("After Outlier Removal:", df.shape)
+# STEP 8: Save and Export Cleaned Data
+cleaned_path = "/content/cleaned_us_youtube.csv"
+df.to_csv(cleaned_path, index=False)
+print(f"Cleaned file saved to: {cleaned_path}")
+# Optional: Download the cleaned file
+files.download(cleaned_path)
