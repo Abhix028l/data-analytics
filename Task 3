@@ -1,0 +1,53 @@
+# Install required packages
+!pip install -q scikit-learn pandas matplotlib seaborn
+
+# Imports
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.ensemble import IsolationForest
+
+# Load the dataset
+df = pd.read_csv('/content/creditcard.csv')
+
+# Data overview
+print(df.head())
+print(df['Class'].value_counts())  # Check class imbalance
+
+# Feature Scaling
+scaler = StandardScaler()
+df['scaled_amount'] = scaler.fit_transform(df[['Amount']])
+df['scaled_time'] = scaler.fit_transform(df[['Time']])
+df.drop(['Amount', 'Time'], axis=1, inplace=True)
+
+# Prepare data
+X = df.drop('Class', axis=1)
+y = df['Class']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+# --- Model 1: Logistic Regression ---
+log_model = LogisticRegression(max_iter=1000)
+log_model.fit(X_train, y_train)
+y_pred_log = log_model.predict(X_test)
+print("\n--- Logistic Regression ---")
+print(classification_report(y_test, y_pred_log))
+
+# --- Model 2: Decision Tree ---
+tree_model = DecisionTreeClassifier(max_depth=5)
+tree_model.fit(X_train, y_train)
+y_pred_tree = tree_model.predict(X_test)
+print("\n--- Decision Tree ---")
+print(classification_report(y_test, y_pred_tree))
+
+# --- Anomaly Detection: Isolation Forest ---
+iso_forest = IsolationForest(contamination=0.0017)  # Adjust contamination rate as needed
+y_pred_iforest = iso_forest.fit_predict(X)
+df['anomaly'] = (y_pred_iforest == -1).astype(int)
+print("\n--- Isolation Forest ---")
+print(df['anomaly'].value_counts())
+print("Overlap with real frauds:", sum((df['anomaly'] == 1) & (df['Class'] == 1)))
