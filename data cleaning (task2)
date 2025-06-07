@@ -1,0 +1,63 @@
+from google.colab import drive
+from google.colab import drive
+drive.mount('/content/drive')
+import pandas as pd
+# import regex as %recall
+# drive.mount('/content/AB_NYC_2019.csv')
+datasetab = pd.read_csv('/content/AB_NYC_2019.csv')
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+pd.set_option('display.max_columns', None)
+sns.set(style="whitegrid")
+# Step 2: Load the dataset
+# Upload the CSV file manually if using Colab (or use a path if local)
+from google.colab import files
+uploaded = files.upload()
+
+# Replace 'AB_NYC_2019.csv' with the uploaded file name
+df = pd.read_csv("AB_NYC_2019.csv")
+
+# Preview data
+df.head()
+# Step 3: Basic Data Overview
+print("Shape of dataset:", df.shape)
+print("\nMissing values per column:\n", df.isnull().sum())
+print("\nDataset info:")
+df.info()
+# Step 4: Handle Missing Values
+# Fill 'name' and 'host_name' with 'Unknown'
+df['name'].fillna('Unknown', inplace=True)
+df['host_name'].fillna('Unknown', inplace=True)
+
+# Drop rows where 'reviews_per_month' is missing (or fill with 0)
+df['reviews_per_month'].fillna(0, inplace=True)
+
+# Confirm no missing values remain
+print(df.isnull().sum())
+# Step 5: Remove Duplicates
+duplicates = df.duplicated().sum()
+print(f"Number of duplicate rows: {duplicates}")
+df.drop_duplicates(inplace=True)
+# Step 6: Standardize Data
+# Convert 'last_review' to datetime
+df['last_review'] = pd.to_datetime(df['last_review'], errors='coerce')
+
+# Standardize string columns
+df['neighbourhood_group'] = df['neighbourhood_group'].str.title()
+df['room_type'] = df['room_type'].str.replace('_', ' ').str.title()
+
+df.head()
+# Step 7: Outlier Detection
+# Plot price distribution
+plt.figure(figsize=(10, 5))
+sns.histplot(df['price'], bins=100, kde=True)
+plt.xlim(0, 1000)
+plt.title("Price Distribution")
+plt.show()
+
+# Cap outliers (e.g., anything above 500) or remove
+df = df[df['price'] <= 500]
+# Step 8: Save the Cleaned Data
+df.to_csv("cleaned_airbnb_nyc.csv", index=False)
+print("Cleaned dataset saved as cleaned_airbnb_nyc.csv")
